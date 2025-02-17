@@ -1,3 +1,11 @@
+/* +++ deprecated +++ */
+
+#ifdef bcontainer_set_BufferingFormat
+  #error its no longer here. dont set it.
+#endif
+
+/* --- deprecated --- */
+
 #ifndef bcontainer_set_Prefix
   #error ifndef bcontainer_set_Prefix
 #endif
@@ -15,10 +23,6 @@
 
 #ifndef bcontainer_set_HandleAllocate
   #define bcontainer_set_HandleAllocate 1
-#endif
-
-#ifndef bcontainer_set_BufferingFormat
-  #define bcontainer_set_BufferingFormat 1
 #endif
 
 #ifndef bcontainer_set_alloc_open
@@ -47,33 +51,17 @@
   #define bcontainer_set_alloc_RetryAmount 0x10
 #endif
 
-#if bcontainer_set_BufferingFormat == 0
-  #ifndef bcontainer_set_BufferingFormat0_WantedBufferByteAmount
-    #define bcontainer_set_BufferingFormat0_WantedBufferByteAmount 512
-  #endif
-  #define bcontainer_BufferDivide (bcontainer_set_BufferingFormat0_WantedBufferByteAmount / sizeof(bcontainer_set_NodeData))
-  #define bcontainer_BufferAmount (bcontainer_BufferDivide == 0 ? 1 : bcontainer_BufferDivide)
-#endif
-
 #define _bcontainer_P(p0) CONCAT3(bcontainer_set_Prefix, _, p0)
 
 #include "internal/rest.h"
 
 #undef _bcontainer_P
 
-#if bcontainer_set_BufferingFormat == 0
-  #undef bcontainer_BufferAmount
-  #undef bcontainer_BufferDivide
-  #undef bcontainer_set_BufferingFormat0_WantedBufferByteAmount
-#endif
-
 #undef bcontainer_set_alloc_RetryAmount
 
 #undef bcontainer_set_alloc_close
 #undef bcontainer_set_alloc_resize
 #undef bcontainer_set_alloc_open
-
-#undef bcontainer_set_BufferingFormat
 
 #undef bcontainer_set_HandleAllocate
 

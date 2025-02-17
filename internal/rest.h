@@ -29,9 +29,6 @@ typedef struct{
     _bcontainer_P(Node_t) *ptr;
     #ifndef bcontainer_set_NodeData
       bcontainer_set_NodeSizeType NodeSize;
-      #if bcontainer_set_BufferingFormat == 0
-        bcontainer_set_NodeType BufferAmount;
-      #endif
     #endif
   #endif
 }_bcontainer_P(t);
@@ -114,12 +111,6 @@ _bcontainer_P(Open)
     List->ptr = NULL;
     #ifndef bcontainer_set_NodeData
       List->NodeSize = NodeSize;
-      #if bcontainer_set_BufferingFormat == 0
-        List->BufferAmount = bcontainer_set_WantedBufferByteAmount / List->NodeSize;
-        if(List->BufferAmount == 0){
-          List->BufferAmount = 1;
-        }
-      #endif
     #endif
   #endif
 }
@@ -170,19 +161,7 @@ _bcontainer_P(SetPossibleWith)(
   _bcontainer_P(t) *List,
   bcontainer_set_NodeType Size
 ){
-  _bcontainer_P(_SetPossible)(List,
-  #if bcontainer_set_BufferingFormat == 0
-    #ifdef bcontainer_set_NodeData
-      Size + bcontainer_BufferAmount
-    #else
-      Size + List->BufferAmount
-    #endif
-  #elif bcontainer_set_BufferingFormat == 1
-    ((uintptr_t)2 << sizeof(uintptr_t) * 8 - __clz(Size | 1)) - 1
-  #else
-    #error ?
-  #endif
-  );
+  _bcontainer_P(_SetPossible)(List, ((uintptr_t)2 << sizeof(uintptr_t) * 8 - __clz(Size | 1)) - 1);
 }
 
 static
