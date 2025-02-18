@@ -64,8 +64,8 @@ _bcontainer_P(_PadGivenNodeSize)
   bcontainer_set_NodeSizeType Size
 ){
   #if bcontainer_set_Recycle
-    if(Size < bcontainer_set_NodeSizeType){
-      return bcontainer_set_NodeSizeType;
+    if(Size < sizeof(bcontainer_set_NodeSizeType)){
+      Size = sizeof(bcontainer_set_NodeSizeType);
     }
   #endif
 
@@ -164,6 +164,7 @@ _bcontainer_P(WhatFirstWouldBe)(
   #endif
 }
 
+/* TODO check WhatFirstWouldBe */
 static
 bcontainer_set_NodeType
 _bcontainer_P(Usage)(
@@ -256,7 +257,7 @@ _bcontainer_P(Open)
   #endif
 
   #if bcontainer_set_Recycle
-    _BDBT_this->e.p = 0;
+    This->e.p = 0;
     #if __sanit
       This->e.c = 0;
     #endif
@@ -488,3 +489,20 @@ _bcontainer_P(NewNode)(
     return _bcontainer_P(_NewNodeAlloc)(This);
   }
 }
+
+#if bcontainer_set_Recycle
+  static
+  void
+  _bcontainer_P(Recycle)(
+    _bcontainer_P(t) *This,
+    bcontainer_set_NodeType node_id
+  ){
+    #if bcontainer_set_MultiThread
+      #error not implemented
+    #endif
+
+    *(bcontainer_set_NodeType *)_bcontainer_P(GetNode)(This, node_id) = This->e.c;
+    This->e.c = node_id;
+    This->e.p++;
+  }
+#endif
