@@ -4,6 +4,20 @@
   #error its no longer here. dont set it.
 #endif
 
+#ifdef bcontainer_set_MultipleType
+  #error this will be implemented later
+#endif
+#ifdef bcontainer_set_MultipleType_Sizes
+  #error this will be implemented later
+#endif
+#ifdef bcontainer_set_MultipleType_SizeArray
+  #error this will be implemented later
+#endif
+
+#ifdef bcontainer_set_HandleAllocate
+  #error will be implemented later
+#endif
+
 /* --- deprecated --- */
 
 #ifndef bcontainer_set_Prefix
@@ -21,8 +35,41 @@
   #define bcontainer_set_NodeSizeType uint32_t
 #endif
 
-#ifndef bcontainer_set_HandleAllocate
-  #define bcontainer_set_HandleAllocate 1
+#ifndef bcontainer_set_Recycle
+  #define bcontainer_set_Recycle 0
+#endif
+
+#ifndef bcontainer_set_MultiThread
+  #define bcontainer_set_MultiThread 0
+#endif
+
+#ifndef bcontainer_set_CountLockFail
+  #define bcontainer_set_CountLockFail 0
+#endif
+
+#ifndef bcontainer_set_StoreFormat
+  #if !bcontainer_set_MultiThread
+    #define bcontainer_set_StoreFormat 0
+  #else
+    #define bcontainer_set_StoreFormat 1
+  #endif
+#endif
+
+#ifndef bcontainer_set_RuntimePreallocate
+  #if !bcontainer_set_MultiThread
+    #define bcontainer_set_RuntimePreallocate 0
+  #else
+    #define bcontainer_set_RuntimePreallocate 1
+  #endif
+#endif
+
+#ifndef bcontainer_set_PreserveSome
+  #if !bcontainer_set_RuntimePreallocate
+    #define bcontainer_set_PreserveSome 0
+  #else
+    /* TODO overflow check sizeof(node_id) */
+    #define bcontainer_set_PreserveSome 1
+  #endif
 #endif
 
 #ifndef bcontainer_set_alloc_open
@@ -63,21 +110,19 @@
 #undef bcontainer_set_alloc_resize
 #undef bcontainer_set_alloc_open
 
-#undef bcontainer_set_HandleAllocate
-
 #ifdef bcontainer_set_NodeData
   #undef bcontainer_set_NodeData
 #endif
+#undef bcontainer_set_PreserveSome
+#undef bcontainer_set_RuntimePreallocate
+#undef bcontainer_set_StoreFormat
+#ifdef bcontainer_set_CountLockFailGlobal
+  #undef bcontainer_set_CountLockFailGlobal
+#endif
+#undef bcontainer_set_CountLockFail
+#undef bcontainer_set_MultiThread
+#undef bcontainer_set_Recycle
 #undef bcontainer_set_NodeSizeType
 #undef bcontainer_set_NodeType
-#ifdef bcontainer_set_MultipleType
-  #ifdef bcontainer_set_MultipleType_Sizes
-    #undef bcontainer_set_MultipleType_Sizes
-  #endif
-  #ifdef bcontainer_set_MultipleType_SizeArray
-    #undef bcontainer_set_MultipleType_SizeArray
-  #endif
-  #undef bcontainer_set_MultipleType
-#endif
 #undef bcontainer_set_PossibleUpdate
 #undef bcontainer_set_Prefix
