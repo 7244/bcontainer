@@ -140,6 +140,7 @@ _bcontainer_P(GetNode)
   #endif
 }
 
+__forceinline
 static
 bcontainer_set_NodeType
 _bcontainer_P(WhatFirstWouldBe)(
@@ -153,9 +154,16 @@ _bcontainer_P(WhatFirstWouldBe)(
     return 0;
   #elif bcontainer_set_StoreFormat == 1
     #if bcontainer_set_PreserveSome
-      /* 0x1000 is smallest page size in i386. make it dynamic in compile time */
+      /* TODO 0x1000 is smallest page size in i386. make it dynamic in compile time */
       /* it should care smallest or optimal allocation, not page size */
-      return 0x1000 / _bcontainer_P(GetNodeSize)(This);
+
+      /* TODO store this in somewhere if below calculation is runtime */
+
+      bcontainer_set_NodeType div = 0x1000 / _bcontainer_P(GetNodeSize)(This);
+      if(div < 2){
+        div = 2;
+      }
+      return (bcontainer_set_NodeType)1 << __compile_time_log2(div);
     #else
       return 1;
     #endif

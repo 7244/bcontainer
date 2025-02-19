@@ -67,7 +67,6 @@
   #if !bcontainer_set_RuntimePreallocate
     #define bcontainer_set_PreserveSome 0
   #else
-    /* TODO overflow check sizeof(node_id) */
     #define bcontainer_set_PreserveSome 1
   #endif
 #endif
