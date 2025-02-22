@@ -284,26 +284,26 @@ _bcontainer_P(Clear)
   #endif
 }
 
-static
-void
-_bcontainer_P(_SetPossible)(
-  _bcontainer_P(t) *bcontainer,
-  bcontainer_set_NodeType Possible
-){
-  bcontainer_set_PossibleUpdate
-  bcontainer->Possible = Possible;
-}
-
-static
-void
-_bcontainer_P(SetPossibleWith)(
-  _bcontainer_P(t) *This,
-  bcontainer_set_NodeType Size
-){
-  _bcontainer_P(_SetPossible)(This, ((uintptr_t)2 << sizeof(uintptr_t) * 8 - __clz(Size | 1)) - 1);
-}
-
 #if bcontainer_set_StoreFormat == 0
+  static
+  void
+  _bcontainer_P(_SetPossible)(
+    _bcontainer_P(t) *bcontainer,
+    bcontainer_set_NodeType Possible
+  ){
+    bcontainer_set_PossibleUpdate
+    bcontainer->Possible = Possible;
+  }
+
+  static
+  void
+  _bcontainer_P(SetPossibleWith)(
+    _bcontainer_P(t) *This,
+    bcontainer_set_NodeType Size
+  ){
+    _bcontainer_P(_SetPossible)(This, ((uintptr_t)2 << sizeof(uintptr_t) * 8 - __clz(Size | 1)) - 1);
+  }
+
   static
   void
   _bcontainer_P(_Resize)(
