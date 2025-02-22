@@ -482,7 +482,7 @@ _bcontainer_P(_NewNodeAlloc)(
 
     #if bcontainer_set_PointerNodeType
       node_id -= (bcontainer_set_NodeType)1 << NodeList;
-      node_id = (bcontainer_set_NodeType)This->NodeLists[NodeList] + node_id;
+      node_id = (bcontainer_set_NodeType)This->NodeLists[NodeList] + node_id * _bcontainer_P(GetNodeSize)(This);
     #endif
 
     return node_id;
