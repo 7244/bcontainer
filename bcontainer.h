@@ -28,8 +28,20 @@
   #define bcontainer_set_PossibleUpdate
 #endif
 
+#ifndef bcontainer_set_PointerNodeType
+  #define bcontainer_set_PointerNodeType 0
+#endif
+
 #ifndef bcontainer_set_NodeType
-  #define bcontainer_set_NodeType uint32_t
+  #if bcontainer_set_PointerNodeType
+    #define bcontainer_set_NodeType uintptr_t
+  #else
+    #define bcontainer_set_NodeType uint32_t
+  #endif
+#else
+  #if bcontainer_set_PointerNodeType
+    #error dont define NodeType
+  #endif
 #endif
 #ifndef bcontainer_set_NodeSizeType
   #define bcontainer_set_NodeSizeType uint32_t
@@ -123,5 +135,6 @@
 #undef bcontainer_set_Recycle
 #undef bcontainer_set_NodeSizeType
 #undef bcontainer_set_NodeType
+#undef bcontainer_set_PointerNodeType
 #undef bcontainer_set_PossibleUpdate
 #undef bcontainer_set_Prefix

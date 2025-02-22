@@ -132,9 +132,13 @@ _bcontainer_P(GetNode)
   #if bcontainer_set_StoreFormat == 0
     return (_bcontainer_P(Node_t) *)((uint8_t *)This->ptr + node_id * _bcontainer_P(GetNodeSize)(This));
   #elif bcontainer_set_StoreFormat == 1
-    uint8_t NodeList = _bcontainer_P(_GetNodeListByNodeID)(node_id);
-    node_id -= (bcontainer_set_NodeType)1 << NodeList;
-    return &This->NodeLists[NodeList][node_id];
+    #if bcontainer_set_PointerNodeType
+      return (_bcontainer_P(Node_t) *)node_id;
+    #else
+      uint8_t NodeList = _bcontainer_P(_GetNodeListByNodeID)(node_id);
+      node_id -= (bcontainer_set_NodeType)1 << NodeList;
+      return &This->NodeLists[NodeList][node_id];
+    #endif
   #else
     #error ?
   #endif
@@ -426,7 +430,6 @@ _bcontainer_P(_NewNodeAlloc)(
       if(This->NodeLists[NodeList] == NULL){
         This->NodeLists[NodeList] = _bcontainer_P(_StoreFormat1_AllocateNodeList)(This, NodeList);
       }
-      return node_id;
     #else
       #if bcontainer_set_RuntimePreallocate
         bcontainer_set_NodeType node_id = __atomic_fetch_add(&This->Current, 1, __ATOMIC_SEQ_CST);
@@ -456,7 +459,6 @@ _bcontainer_P(_NewNodeAlloc)(
             break;
           }
         }
-        return node_id;
       #else
         #if bcontainer_set_PreserveSome
           #error not gonna be implemented
@@ -475,27 +477,45 @@ _bcontainer_P(_NewNodeAlloc)(
           }
           _bcontainer_P(_FastLock_Unlock)(&This->NodeListsLocks[NodeList]);
         }
-        return node_id;
       #endif
     #endif
+
+    #if bcontainer_set_PointerNodeType
+      node_id -= (bcontainer_set_NodeType)1 << NodeList;
+      node_id = (bcontainer_set_NodeType)This->NodeLists[NodeList] + node_id;
+    #endif
+
+    return node_id;
   #else
     #error ?
   #endif
 }
 static
-bcontainer_set_NodeType
+#if bcontainer_set_PointerNodeType
+  _bcontainer_P(Node_t) *
+#else
+  bcontainer_set_NodeType
+#endif
 _bcontainer_P(NewNode)(
   _bcontainer_P(t) *This
 ){
-  if(0);
+  bcontainer_set_NodeType ret;
+
+  if(0){}
   #if bcontainer_set_Recycle
     else if(This->e.p){
-      return _bcontainer_P(_NewNodeEmpty)(This);
+      ret = _bcontainer_P(_NewNodeEmpty)(This);
     }
   #endif
   else{
-    return _bcontainer_P(_NewNodeAlloc)(This);
+    ret = _bcontainer_P(_NewNodeAlloc)(This);
   }
+
+  #if bcontainer_set_PointerNodeType
+    return (_bcontainer_P(Node_t) *)ret;
+  #else
+    return ret;
+  #endif
 }
 
 #if bcontainer_set_Recycle
@@ -503,14 +523,18 @@ _bcontainer_P(NewNode)(
   void
   _bcontainer_P(Recycle)(
     _bcontainer_P(t) *This,
-    bcontainer_set_NodeType node_id
+    #if bcontainer_set_PointerNodeType
+      _bcontainer_P(Node_t) *node_id
+    #else
+      bcontainer_set_NodeType node_id
+    #endif
   ){
     #if bcontainer_set_MultiThread
       #error not implemented
     #endif
 
     *(bcontainer_set_NodeType *)_bcontainer_P(GetNode)(This, node_id) = This->e.c;
-    This->e.c = node_id;
+    This->e.c = (bcontainer_set_NodeType)node_id;
     This->e.p++;
   }
 #endif
