@@ -127,13 +127,17 @@ _bcontainer_P(Node_t) *
 _bcontainer_P(GetNode)
 (
   _bcontainer_P(t) *This,
-  bcontainer_set_NodeType node_id
+  #if bcontainer_set_PointerNodeType
+    _bcontainer_P(Node_t) *node_id
+  #else
+    bcontainer_set_NodeType node_id
+  #endif
 ){
   #if bcontainer_set_StoreFormat == 0
     return (_bcontainer_P(Node_t) *)((uint8_t *)This->ptr + node_id * _bcontainer_P(GetNodeSize)(This));
   #elif bcontainer_set_StoreFormat == 1
     #if bcontainer_set_PointerNodeType
-      return (_bcontainer_P(Node_t) *)node_id;
+      return node_id;
     #else
       uint8_t NodeList = _bcontainer_P(_GetNodeListByNodeID)(node_id);
       node_id -= (bcontainer_set_NodeType)1 << NodeList;
@@ -395,7 +399,13 @@ _bcontainer_P(Clear)
       #error not implemented
     #endif
     bcontainer_set_NodeType node_id = This->e.c;
-    This->e.c = *(bcontainer_set_NodeType *)_bcontainer_P(GetNode)(This, node_id);
+    This->e.c = *(bcontainer_set_NodeType *)_bcontainer_P(GetNode)(This,
+      #if bcontainer_set_PointerNodeType
+        (_bcontainer_P(Node_t ) *)node_id
+      #else
+        node_id
+      #endif
+    );
     This->e.p--;
     return node_id;
   }
