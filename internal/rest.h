@@ -1,3 +1,74 @@
+static void *_bcontainer_P(_mmap)(
+  uintptr_t size
+){
+  for(uint32_t iRetry = 0; iRetry < bcontainer_set_alloc_RetryAmount; iRetry++){
+    #if bcontainer_set_use_mmap
+      void *new_ptr = __generic_mmap(size);
+      if((uintptr_t)new_ptr > (uintptr_t)-4096){
+        continue;
+      }
+    #else
+      void *new_ptr = bcontainer_set_alloc_open(size);
+      if(new_ptr == NULL){
+        continue;
+      }
+    #endif
+    return new_ptr;
+  }
+  __abort();
+}
+static void *_bcontainer_P(_mremap)(
+  void *ptr,
+  uintptr_t old_size,
+  uintptr_t new_size
+){
+  for(uint32_t iRetry = 0; iRetry < bcontainer_set_alloc_RetryAmount; iRetry++){
+    #if bcontainer_set_use_mmap
+      void *new_ptr = __generic_mremap(ptr, old_size, new_size);
+      if((uintptr_t)new_ptr > (uintptr_t)-4096){
+        continue;
+      }
+    #else
+      void *new_ptr = bcontainer_set_alloc_resize(ptr, new_size);
+      if(new_ptr == NULL){
+        continue;
+      }
+    #endif
+    return new_ptr;
+  }
+  __abort();
+}
+static void *_bcontainer_P(_mrealloc)(
+  void *ptr,
+  uintptr_t old_size,
+  uintptr_t new_size
+){
+  if(ptr == NULL){
+    return _bcontainer_P(_mmap)(new_size);
+  }
+  else{
+    return _bcontainer_P(_mremap)(ptr, old_size, new_size);
+  }
+}
+static void _bcontainer_P(_munmap)(
+  void *ptr,
+  uintptr_t size
+){
+  #if bcontainer_set_use_mmap
+    __generic_munmap(ptr, size);
+  #else
+    bcontainer_set_alloc_close(ptr);
+  #endif
+}
+static void _bcontainer_P(_mfree)(
+  void *ptr,
+  uintptr_t size
+){
+  if(ptr != NULL){
+    _bcontainer_P(_munmap)(ptr, size);
+  }
+}
+
 #if defined(bcontainer_set_NodeData)
   typedef bcontainer_set_NodeData _bcontainer_P(Node_t);
 #else
@@ -116,7 +187,7 @@ _bcontainer_P(GetNodeSize)
     _bcontainer_P(t) *This,
     uint8_t NodeList
   ){
-    return (_bcontainer_P(Node_t) *)bcontainer_set_alloc_open(
+    return (_bcontainer_P(Node_t) *)_bcontainer_P(_mmap)(
       ((uintptr_t)1 << NodeList) * _bcontainer_P(GetNodeSize)(This)
     );
   }
@@ -209,13 +280,13 @@ _bcontainer_P(Close)
   _bcontainer_P(t) *This
 ){
   #if bcontainer_set_StoreFormat == 0
-    bcontainer_set_alloc_close(This->ptr);
+    _bcontainer_P(_mfree)(This->ptr, This->Possible * _bcontainer_P(GetNodeSize)(This));
   #elif bcontainer_set_StoreFormat == 1
     for(
       uintptr_t i = (uintptr_t)1 << __compile_time_log2(sizeof(bcontainer_set_NodeType) * 8);
       i--;
     ){
-      bcontainer_set_alloc_close(This->NodeLists[i]);
+      _bcontainer_P(_mfree)(This->NodeLists[i], ((uintptr_t)1 << i) * _bcontainer_P(GetNodeSize)(This));
     }
   #else
     #error ?
@@ -314,32 +385,20 @@ _bcontainer_P(Clear)
 
   static
   void
-  _bcontainer_P(_Resize)(
-    _bcontainer_P(t) *This
-  ){
-    for(uint32_t iRetry = 0; iRetry < bcontainer_set_alloc_RetryAmount; iRetry++){
-      void *np = bcontainer_set_alloc_resize(
-        This->ptr,
-        (uintptr_t)This->Possible * _bcontainer_P(GetNodeSize)(This)
-      );
-      if(np == NULL){
-        continue;
-      }
-      This->ptr = (_bcontainer_P(Node_t) *)np;
-      return;
-    }
-    __abort();
-  }
-
-  static
-  void
   _bcontainer_P(Reserve)
   (
     _bcontainer_P(t) *This,
     bcontainer_set_NodeType Amount
   ){
+    bcontainer_set_NodeType old_possible = This->Possible;
+
     _bcontainer_P(_SetPossible)(This, Amount);
-    _bcontainer_P(_Resize)(This);
+
+    This->ptr = (_bcontainer_P(Node_t) *)_bcontainer_P(_mrealloc)(
+      This->ptr,
+      (uintptr_t)old_possible * _bcontainer_P(GetNodeSize)(This),
+      (uintptr_t)This->Possible * _bcontainer_P(GetNodeSize)(This)
+    );
   }
 
   static
@@ -349,8 +408,15 @@ _bcontainer_P(Clear)
     _bcontainer_P(t) *This,
     bcontainer_set_NodeType Amount
   ){
+    bcontainer_set_NodeType old_possible = This->Possible;
+
     _bcontainer_P(SetPossibleWith)(This, Amount);
-    _bcontainer_P(_Resize)(This);
+
+    This->ptr = (_bcontainer_P(Node_t) *)_bcontainer_P(_mrealloc)(
+      This->ptr,
+      (uintptr_t)old_possible * _bcontainer_P(GetNodeSize)(This),
+      (uintptr_t)This->Possible * _bcontainer_P(GetNodeSize)(This)
+    );
   }
 #endif
 

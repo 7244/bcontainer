@@ -83,43 +83,49 @@
   #endif
 #endif
 
-#ifndef bcontainer_set_alloc_open
-  #if defined(__generic_malloc)
-    #define bcontainer_set_alloc_open __generic_malloc
-  #else
-    #define bcontainer_set_alloc_open malloc
-  #endif
-#endif
-#ifndef bcontainer_set_alloc_resize
-  #if defined(__generic_realloc)
-    #define bcontainer_set_alloc_resize __generic_realloc
-  #else
-    #define bcontainer_set_alloc_resize realloc
-  #endif
-#endif
-#ifndef bcontainer_set_alloc_close
-  #if defined(__generic_free)
-    #define bcontainer_set_alloc_close __generic_free
-  #else
-    #define bcontainer_set_alloc_close free
-  #endif
-#endif
-
 #ifndef bcontainer_set_alloc_RetryAmount
   #define bcontainer_set_alloc_RetryAmount 0x10
 #endif
 
-#define _bcontainer_P(p0) CONCAT3(bcontainer_set_Prefix, _, p0)
+#if \
+  !defined(bcontainer_set_alloc_open) && \
+  !defined(bcontainer_set_alloc_resize) && \
+  !defined(bcontainer_set_alloc_close)
 
-#include "internal/rest.h"
+  #if defined(__platform_libc)
+    #define bcontainer_set_alloc_open malloc
+    #define bcontainer_set_alloc_resize realloc
+    #define bcontainer_set_alloc_close free
+  #else
+    #define bcontainer_set_alloc_open __generic_malloc
+    #define bcontainer_set_alloc_resize __generic_realloc
+    #define bcontainer_set_alloc_close __generic_free
+  #endif
+#endif
 
-#undef _bcontainer_P
+#ifndef bcontainer_set_use_mmap
+  #if defined(__generic_mmap) && defined(__generic_munmap)
+    #define bcontainer_set_use_mmap 1
+  #else
+    #define bcontainer_set_use_mmap 0
+  #endif
+#endif
+
+#include "internal/PrepareAndInclude.h"
+
+#undef bcontainer_set_use_mmap
+
+#ifdef bcontainer_set_alloc_open
+  #undef bcontainer_set_alloc_open
+#endif
+#ifdef bcontainer_set_alloc_resize
+  #undef bcontainer_set_alloc_resize
+#endif
+#ifdef bcontainer_set_alloc_close
+  #undef bcontainer_set_alloc_close
+#endif
 
 #undef bcontainer_set_alloc_RetryAmount
-
-#undef bcontainer_set_alloc_close
-#undef bcontainer_set_alloc_resize
-#undef bcontainer_set_alloc_open
 
 #ifdef bcontainer_set_NodeData
   #undef bcontainer_set_NodeData
