@@ -83,6 +83,10 @@
   #endif
 #endif
 
+#ifndef bcontainer_set_StoreFormat1_StoreNodeList
+  #define bcontainer_set_StoreFormat1_StoreNodeList 0
+#endif
+
 #ifndef bcontainer_set_alloc_RetryAmount
   #define bcontainer_set_alloc_RetryAmount 0x10
 #endif
@@ -130,6 +134,7 @@
 #ifdef bcontainer_set_NodeData
   #undef bcontainer_set_NodeData
 #endif
+#undef bcontainer_set_StoreFormat1_StoreNodeList
 #undef bcontainer_set_PreserveSome
 #undef bcontainer_set_RuntimePreallocate
 #undef bcontainer_set_StoreFormat

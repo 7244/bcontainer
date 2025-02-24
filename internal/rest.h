@@ -1,73 +1,4 @@
-static void *_bcontainer_P(_mmap)(
-  uintptr_t size
-){
-  for(uint32_t iRetry = 0; iRetry < bcontainer_set_alloc_RetryAmount; iRetry++){
-    #if bcontainer_set_use_mmap
-      void *new_ptr = __generic_mmap(size);
-      if((uintptr_t)new_ptr > (uintptr_t)-4096){
-        continue;
-      }
-    #else
-      void *new_ptr = bcontainer_set_alloc_open(size);
-      if(new_ptr == NULL){
-        continue;
-      }
-    #endif
-    return new_ptr;
-  }
-  __abort();
-}
-static void *_bcontainer_P(_mremap)(
-  void *ptr,
-  uintptr_t old_size,
-  uintptr_t new_size
-){
-  for(uint32_t iRetry = 0; iRetry < bcontainer_set_alloc_RetryAmount; iRetry++){
-    #if bcontainer_set_use_mmap
-      void *new_ptr = __generic_mremap(ptr, old_size, new_size);
-      if((uintptr_t)new_ptr > (uintptr_t)-4096){
-        continue;
-      }
-    #else
-      void *new_ptr = bcontainer_set_alloc_resize(ptr, new_size);
-      if(new_ptr == NULL){
-        continue;
-      }
-    #endif
-    return new_ptr;
-  }
-  __abort();
-}
-static void *_bcontainer_P(_mrealloc)(
-  void *ptr,
-  uintptr_t old_size,
-  uintptr_t new_size
-){
-  if(ptr == NULL){
-    return _bcontainer_P(_mmap)(new_size);
-  }
-  else{
-    return _bcontainer_P(_mremap)(ptr, old_size, new_size);
-  }
-}
-static void _bcontainer_P(_munmap)(
-  void *ptr,
-  uintptr_t size
-){
-  #if bcontainer_set_use_mmap
-    __generic_munmap(ptr, size);
-  #else
-    bcontainer_set_alloc_close(ptr);
-  #endif
-}
-static void _bcontainer_P(_mfree)(
-  void *ptr,
-  uintptr_t size
-){
-  if(ptr != NULL){
-    _bcontainer_P(_munmap)(ptr, size);
-  }
-}
+#include "_m.h"
 
 #if defined(bcontainer_set_NodeData)
   typedef bcontainer_set_NodeData _bcontainer_P(Node_t);
@@ -97,17 +28,29 @@ typedef struct{
     ];
     bcontainer_set_NodeType Current;
 
-    #if bcontainer_set_RuntimePreallocate
-      bcontainer_set_NodeType Possible;
-
-      #if bcontainer_set_MultiThread
-        _bcontainer_P(_FastLock_t) AllocateLock;
+    #if bcontainer_set_StoreFormat1_StoreNodeList
+      #if bcontainer_set_RuntimePreallocate
+        #error not implemented
       #endif
-    #else
       #if bcontainer_set_MultiThread
-        _bcontainer_P(_FastLock_t) NodeListsLocks[
-          (uintptr_t)1 << __compile_time_log2(sizeof(bcontainer_set_NodeType) * 8)
-        ];
+        #error not implemented
+      #endif
+
+      bcontainer_set_NodeType Possible;
+      uint8_t NodeList;
+    #else
+      #if bcontainer_set_RuntimePreallocate
+        bcontainer_set_NodeType Possible;
+
+        #if bcontainer_set_MultiThread
+          _bcontainer_P(_FastLock_t) AllocateLock;
+        #endif
+      #else
+        #if bcontainer_set_MultiThread
+          _bcontainer_P(_FastLock_t) NodeListsLocks[
+            (uintptr_t)1 << __compile_time_log2(sizeof(bcontainer_set_NodeType) * 8)
+          ];
+        #endif
       #endif
     #endif
   #else
@@ -182,13 +125,21 @@ _bcontainer_P(GetNodeSize)
   }
 
   static
+  uintptr_t
+  _bcontainer_P(_StoreFormat1_NodeListAllocateSize)(
+    _bcontainer_P(t) *This,
+    uint8_t NodeList
+  ){
+    return ((uintptr_t)1 << NodeList) * _bcontainer_P(GetNodeSize)(This);
+  }
+  static
   _bcontainer_P(Node_t) *
   _bcontainer_P(_StoreFormat1_AllocateNodeList)(
     _bcontainer_P(t) *This,
     uint8_t NodeList
   ){
     return (_bcontainer_P(Node_t) *)_bcontainer_P(_mmap)(
-      ((uintptr_t)1 << NodeList) * _bcontainer_P(GetNodeSize)(This)
+      _bcontainer_P(_StoreFormat1_NodeListAllocateSize)(This, NodeList)
     );
   }
 #endif
@@ -222,6 +173,30 @@ _bcontainer_P(GetNode)
 __forceinline
 static
 bcontainer_set_NodeType
+_bcontainer_P(_PageNodeDiv)(
+  _bcontainer_P(t) *This
+){
+  /* TODO 0x1000 is smallest page size in i386. make it dynamic in compile time */
+
+  /* TODO store this in somewhere if below calculation is runtime */
+
+  bcontainer_set_NodeType div = 0x1000 / _bcontainer_P(GetNodeSize)(This);
+  #if bcontainer_set_RuntimePreallocate
+    if(div < 2){
+      div = 2;
+    }
+  #else
+    if(div < 1){
+      div = 1;
+    }
+  #endif
+
+  return div;
+}
+
+__forceinline
+static
+bcontainer_set_NodeType
 _bcontainer_P(WhatFirstWouldBe)(
   _bcontainer_P(t) *This
 ){
@@ -233,15 +208,8 @@ _bcontainer_P(WhatFirstWouldBe)(
     return 0;
   #elif bcontainer_set_StoreFormat == 1
     #if bcontainer_set_PreserveSome
-      /* TODO 0x1000 is smallest page size in i386. make it dynamic in compile time */
-      /* it should care smallest or optimal allocation, not page size */
+      bcontainer_set_NodeType div = _bcontainer_P(_PageNodeDiv)(This);
 
-      /* TODO store this in somewhere if below calculation is runtime */
-
-      bcontainer_set_NodeType div = 0x1000 / _bcontainer_P(GetNodeSize)(This);
-      if(div < 2){
-        div = 2;
-      }
       return (bcontainer_set_NodeType)1 << __compile_time_log2(div);
     #else
       return 1;
@@ -301,54 +269,7 @@ _bcontainer_P(Open)
     , bcontainer_set_NodeSizeType NodeSize
   #endif
 ){
-  #if bcontainer_set_StoreFormat == 0
-    This->Current = 0;
-    This->Possible = 0;
-    This->ptr = NULL;
-  #elif bcontainer_set_StoreFormat == 1
-    This->Current = _bcontainer_P(WhatFirstWouldBe)(This);
-
-    for(
-      uintptr_t i = (uintptr_t)1 << __compile_time_log2(sizeof(bcontainer_set_NodeType) * 8);
-      i--;
-    ){
-      This->NodeLists[i] = NULL;
-    }
-
-    #if bcontainer_set_RuntimePreallocate
-      #if bcontainer_set_PreserveSome
-        This->Possible = _bcontainer_P(WhatFirstWouldBe)(This) >> 1;
-      #else
-        This->Possible = _bcontainer_P(WhatFirstWouldBe)(This);
-      #endif
-
-      #if bcontainer_set_MultiThread
-        _bcontainer_P(_FastLock_Init)(&This->AllocateLock);
-      #endif
-    #else
-      #if bcontainer_set_MultiThread
-        for(
-          uintptr_t i = (uintptr_t)1 << __compile_time_log2(sizeof(bcontainer_set_NodeType) * 8);
-          i--;
-        ){
-          bcontainer_P(_FastLock_Init)(&This->NodeListsLocks[i]);
-        }
-      #endif
-    #endif
-  #else
-    #error ?
-  #endif
-
-  #if !defined(bcontainer_set_NodeData)
-    This->NodeSize = _bcontainer_P(_PadGivenNodeSize)(This, NodeSize);
-  #endif
-
-  #if bcontainer_set_Recycle
-    This->e.p = 0;
-    #if __sanit
-      This->e.c = 0;
-    #endif
-  #endif
+  #include "Open.h"
 }
 static
 void
@@ -356,11 +277,10 @@ _bcontainer_P(Clear)
 (
   _bcontainer_P(t) *This
 ){
-  This->Current = _bcontainer_P(WhatFirstWouldBe)(This);
+  /* TODO you can do better */
 
-  #if bcontainer_set_Recycle
-    This->e.p = 0;
-  #endif
+  _bcontainer_P(Close)(This);
+  _bcontainer_P(Open)(This);
 }
 
 #if bcontainer_set_StoreFormat == 0
@@ -481,91 +401,7 @@ bcontainer_set_NodeType
 _bcontainer_P(_NewNodeAlloc)(
   _bcontainer_P(t) *This
 ){
-  #if bcontainer_set_StoreFormat == 0
-    #if bcontainer_set_MultiThread
-      #error not gonna be implemented
-    #endif
-    #if bcontainer_set_RuntimePreallocate
-      #error not gonna be implemented
-    #endif
-
-    _bcontainer_P(AddEmpty)(This, 1);
-
-    return This->Current - 1;
-  #elif bcontainer_set_StoreFormat == 1
-    #if !bcontainer_set_MultiThread
-      #if bcontainer_set_RuntimePreallocate
-        #error not gonna be implemented
-      #endif
-      #if bcontainer_set_PreserveSome
-        #error not gonna be implemented
-      #endif
-
-      bcontainer_set_NodeType node_id = This->Current++;
-      uint8_t NodeList = _bcontainer_P(_GetNodeListByNodeID)(node_id);
-      if(This->NodeLists[NodeList] == NULL){
-        This->NodeLists[NodeList] = _bcontainer_P(_StoreFormat1_AllocateNodeList)(This, NodeList);
-      }
-    #else
-      #if bcontainer_set_RuntimePreallocate
-        bcontainer_set_NodeType node_id = __atomic_fetch_add(&This->Current, 1, __ATOMIC_SEQ_CST);
-        bcontainer_set_NodeType p = __atomic_load_n(&This->Possible, __ATOMIC_RELAXED);
-        if(node_id + 0xc00 * !bcontainer_set_PreserveSome >= p){
-          while(1){
-            if(_bcontainer_P(_FastLock_LockDontCountFail)(&This->AllocateLock)){
-              p = __atomic_load_n(&This->Possible, __ATOMIC_SEQ_CST);
-              if(node_id < p << !!bcontainer_set_PreserveSome){
-                break;
-              }
-              _bcontainer_P(_FastLock_CountFail)(&This->AllocateLock);
-              continue;
-            }
-            bcontainer_set_NodeType c = node_id;
-            while(c + 0xc00 * !bcontainer_set_PreserveSome >= This->Possible){
-              uint8_t NodeList = _bcontainer_P(_GetNodeListByNodeID)(This->Possible << !!bcontainer_set_PreserveSome);
-              __atomic_exchange_n(
-                &This->NodeLists[NodeList],
-                _bcontainer_P(_StoreFormat1_AllocateNodeList)(This, NodeList),
-                __ATOMIC_SEQ_CST
-              );
-              __atomic_exchange_n(&This->Possible, This->Possible << 1, __ATOMIC_RELAXED);
-              c = __atomic_load_n(&This->Current, __ATOMIC_RELAXED);
-            }
-            _bcontainer_P(_FastLock_Unlock)(&This->AllocateLock);
-            break;
-          }
-        }
-      #else
-        #if bcontainer_set_PreserveSome
-          #error not gonna be implemented
-        #endif
-
-        bcontainer_set_NodeType node_id = __atomic_fetch_add(&This->Current, 1, __ATOMIC_SEQ_CST);
-        uint8_t NodeList = _bcontainer_P(_GetNodeListByNodeID)(node_id);
-        if(__atomic_load_n(&This->NodeLists[NodeList], __ATOMIC_RELAXED) == NULL){
-          while(_bcontainer_P(_FastLock_Lock)(&This->NodeListsLocks[NodeList])){ /* TOOD cpu relax */ }
-          if(__atomic_load_n(&This->NodeLists[NodeList], __ATOMIC_SEQ_CST) == NULL){
-            __atomic_exchange_n(
-              &This->NodeLists[NodeList],
-              _bcontainer_P(_StoreFormat1_AllocateNodeList)(This, NodeList),
-              __ATOMIC_SEQ_CST
-            );
-          }
-          _bcontainer_P(_FastLock_Unlock)(&This->NodeListsLocks[NodeList]);
-        }
-      #endif
-    #endif
-
-    #if bcontainer_set_PointerNodeType
-      uint8_t _sub_NodeList = _bcontainer_P(_GetNodeListByNodeID)(node_id);
-      node_id -= (bcontainer_set_NodeType)1 << _sub_NodeList;
-      node_id = (bcontainer_set_NodeType)This->NodeLists[_sub_NodeList] + node_id * _bcontainer_P(GetNodeSize)(This);
-    #endif
-
-    return node_id;
-  #else
-    #error ?
-  #endif
+  #include "_NewNodeAlloc.h"
 }
 static
 #if bcontainer_set_PointerNodeType
