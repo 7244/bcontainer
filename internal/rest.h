@@ -260,6 +260,28 @@ _bcontainer_P(Close)
     #error ?
   #endif
 }
+
+static
+void
+_bcontainer_P(_SetStuffAfterOpen)
+(
+  _bcontainer_P(t) *This
+){
+  #if bcontainer_set_StoreFormat == 0
+    This->Current = _bcontainer_P(WhatFirstWouldBe)(This);
+  #elif bcontainer_set_StoreFormat == 1
+    #if bcontainer_set_StoreFormat1_StoreNodeList
+      This->Current = 0;
+      This->Possible = 0;
+      This->NodeList = _bcontainer_P(_PageNodeDiv)(This);
+    #else
+      This->Current = _bcontainer_P(WhatFirstWouldBe)(This);
+    #endif
+  #else
+    #error
+  #endif
+}
+
 static
 void
 _bcontainer_P(Open)
@@ -271,17 +293,21 @@ _bcontainer_P(Open)
 ){
   #include "Open.h"
 }
-static
-void
-_bcontainer_P(Clear)
-(
-  _bcontainer_P(t) *This
-){
-  /* TODO you can do better */
 
-  _bcontainer_P(Close)(This);
-  _bcontainer_P(Open)(This);
-}
+#if bcontainer_set_Clear
+  static
+  void
+  _bcontainer_P(Clear)
+  (
+    _bcontainer_P(t) *This
+  ){
+    #if bcontainer_set_Recycle
+      This->e.p = 0;
+    #endif
+
+    _bcontainer_P(_SetStuffAfterOpen)(This);
+  }
+#endif
 
 #if bcontainer_set_StoreFormat == 0
   static

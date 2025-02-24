@@ -47,6 +47,10 @@
   #define bcontainer_set_NodeSizeType uint32_t
 #endif
 
+#ifndef bcontainer_set_Clear
+  #define bcontainer_set_Clear 0
+#endif
+
 #ifndef bcontainer_set_Recycle
   #define bcontainer_set_Recycle 0
 #endif
@@ -144,6 +148,7 @@
 #undef bcontainer_set_CountLockFail
 #undef bcontainer_set_MultiThread
 #undef bcontainer_set_Recycle
+#undef bcontainer_set_Clear
 #undef bcontainer_set_NodeSizeType
 #undef bcontainer_set_NodeType
 #undef bcontainer_set_PointerNodeType

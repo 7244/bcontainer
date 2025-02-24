@@ -1,5 +1,4 @@
 #if bcontainer_set_StoreFormat == 0
-  This->Current = 0;
   This->Possible = 0;
   This->ptr = NULL;
 #elif bcontainer_set_StoreFormat == 1
@@ -18,12 +17,8 @@
       #error not implemented
     #endif
 
-    This->Current = 0;
-    This->Possible = 0;
-    This->NodeList = _bcontainer_P(_PageNodeDiv)(This);
+    /* all is in _SetStuffAfterOpen */
   #else
-    This->Current = _bcontainer_P(WhatFirstWouldBe)(This);
-
     #if bcontainer_set_RuntimePreallocate
       #if bcontainer_set_PreserveSome
         This->Possible = _bcontainer_P(WhatFirstWouldBe)(This) >> 1;
@@ -59,3 +54,5 @@
     This->e.c = 0;
   #endif
 #endif
+
+_bcontainer_P(_SetStuffAfterOpen)(This);
