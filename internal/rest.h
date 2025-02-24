@@ -356,7 +356,7 @@ _bcontainer_P(Clear)
 (
   _bcontainer_P(t) *This
 ){
-  This->Current = 0;
+  This->Current = _bcontainer_P(WhatFirstWouldBe)(This);
 
   #if bcontainer_set_Recycle
     This->e.p = 0;
@@ -557,8 +557,9 @@ _bcontainer_P(_NewNodeAlloc)(
     #endif
 
     #if bcontainer_set_PointerNodeType
-      node_id -= (bcontainer_set_NodeType)1 << NodeList;
-      node_id = (bcontainer_set_NodeType)This->NodeLists[NodeList] + node_id * _bcontainer_P(GetNodeSize)(This);
+      uint8_t _sub_NodeList = _bcontainer_P(_GetNodeListByNodeID)(node_id);
+      node_id -= (bcontainer_set_NodeType)1 << _sub_NodeList;
+      node_id = (bcontainer_set_NodeType)This->NodeLists[_sub_NodeList] + node_id * _bcontainer_P(GetNodeSize)(This);
     #endif
 
     return node_id;
