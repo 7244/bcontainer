@@ -180,19 +180,36 @@ _bcontainer_P(_PageNodeDiv)(
 
   /* TODO store this in somewhere if below calculation is runtime */
 
-  bcontainer_set_NodeType div = 0x1000 / _bcontainer_P(GetNodeSize)(This);
-  #if bcontainer_set_RuntimePreallocate
-    if(div < 2){
-      div = 2;
-    }
-  #else
-    if(div < 1){
-      div = 1;
-    }
-  #endif
-
-  return div;
+  return 0x1000 / _bcontainer_P(GetNodeSize)(This);
 }
+
+#if bcontainer_set_StoreFormat == 1
+  __forceinline
+  static
+  bcontainer_set_NodeType
+  _bcontainer_P(_WhatFirstNodeListWouldBe)(
+    _bcontainer_P(t) *This
+  ){
+    #if bcontainer_set_PreserveSome
+      bcontainer_set_NodeType ret = _bcontainer_P(_PageNodeDiv)(This);
+    #else
+      bcontainer_set_NodeType ret = 0;
+    #endif
+    if(ret < 1){
+      ret = 1;
+    }
+
+    ret = __compile_time_log2(ret);
+
+    #if bcontainer_set_RuntimePreallocate
+      if(ret < 1){
+        ret = 1;
+      }
+    #endif
+
+    return ret;
+  }
+#endif
 
 __forceinline
 static
@@ -207,19 +224,64 @@ _bcontainer_P(WhatFirstWouldBe)(
 
     return 0;
   #elif bcontainer_set_StoreFormat == 1
-    #if bcontainer_set_PreserveSome
-      bcontainer_set_NodeType div = _bcontainer_P(_PageNodeDiv)(This);
+    #if bcontainer_set_StoreFormat1_StoreNodeList
+      #if bcontainer_set_RuntimePreallocate
+        #error not implemented
+      #endif
+      #if bcontainer_set_MultiThread
+        #error not implemented
+      #endif
 
-      return (bcontainer_set_NodeType)1 << __compile_time_log2(div);
+      return 0;
     #else
-      return 1;
+      return (bcontainer_set_NodeType)1 << _bcontainer_P(_WhatFirstNodeListWouldBe)(This);
     #endif
   #else
     #error ?
   #endif
 }
 
-/* TODO check WhatFirstWouldBe */
+static
+bcontainer_set_NodeType
+_bcontainer_P(GetCapacity)(
+  _bcontainer_P(t) *This
+){
+  #if bcontainer_set_StoreFormat == 0
+    #if bcontainer_set_MultiThread
+      #error not implemented yet
+    #endif
+
+    return This->Possible;
+  #elif bcontainer_set_StoreFormat == 1
+    #if bcontainer_set_StoreFormat1_StoreNodeList
+      #if bcontainer_set_MultiThread
+        #error not implemented yet
+      #endif
+      #if bcontainer_set_RuntimePreallocate
+        #error not implemented yet
+      #endif
+
+      uint8_t lnl = This->NodeList;
+    #else
+      #if bcontainer_set_MultiThread
+        bcontainer_set_NodeType Current = __atomic_load_n(&This->Current, __ATOMIC_SEQ_CST);
+      #else
+        bcontainer_set_NodeType Current = This->Current;
+      #endif
+      uint8_t lnl = _bcontainer_P(_GetNodeListByNodeID)(Current);
+      if(Current > (bcontainer_set_NodeType)1 << lnl){
+        lnl++;
+      }
+    #endif
+
+    return
+      ((bcontainer_set_NodeType)1 << lnl) -
+      ((bcontainer_set_NodeType)1 << _bcontainer_P(_WhatFirstNodeListWouldBe)(This));
+  #else
+    #error ?
+  #endif
+}
+
 static
 bcontainer_set_NodeType
 _bcontainer_P(Usage)(
@@ -271,9 +333,16 @@ _bcontainer_P(_SetStuffAfterOpen)
     This->Current = _bcontainer_P(WhatFirstWouldBe)(This);
   #elif bcontainer_set_StoreFormat == 1
     #if bcontainer_set_StoreFormat1_StoreNodeList
+      #if bcontainer_set_RuntimePreallocate
+        #error not implemented
+      #endif
+      #if bcontainer_set_MultiThread
+        #error not implemented
+      #endif
+
       This->Current = 0;
       This->Possible = 0;
-      This->NodeList = _bcontainer_P(_PageNodeDiv)(This);
+      This->NodeList = _bcontainer_P(_WhatFirstNodeListWouldBe)(This);
     #else
       This->Current = _bcontainer_P(WhatFirstWouldBe)(This);
     #endif
@@ -309,15 +378,44 @@ _bcontainer_P(Open)
   }
 #endif
 
+static
+void
+_bcontainer_P(_InformCapacity)(
+  _bcontainer_P(t) *This,
+  #if bcontainer_set_StoreFormat == 0
+    bcontainer_set_NodeType _Possible
+  #elif bcontainer_set_StoreFormat == 1
+    uint8_t _NodeList
+  #else
+    #error ?
+  #endif
+){
+  #if bcontainer_set_StoreFormat == 0
+    bcontainer_set_NodeType old_capacity = _Possible / 2;
+    bcontainer_set_NodeType new_capacity = _Possible;
+  #elif bcontainer_set_StoreFormat == 1
+    bcontainer_set_NodeType old_capacity =
+      ((bcontainer_set_NodeType)1 << _NodeList) -
+      ((bcontainer_set_NodeType)1 << _bcontainer_P(_WhatFirstNodeListWouldBe)(This));
+    bcontainer_set_NodeType new_capacity =
+      ((bcontainer_set_NodeType)1 << _NodeList + 1) -
+      ((bcontainer_set_NodeType)1 << _bcontainer_P(_WhatFirstNodeListWouldBe)(This));
+  #else
+    #error ?
+  #endif
+
+  bcontainer_set_CapacityUpdate
+}
+
 #if bcontainer_set_StoreFormat == 0
   static
   void
   _bcontainer_P(_SetPossible)(
-    _bcontainer_P(t) *bcontainer,
+    _bcontainer_P(t) *This,
     bcontainer_set_NodeType Possible
   ){
-    bcontainer_set_PossibleUpdate
-    bcontainer->Possible = Possible;
+    _bcontainer_P(_InformCapacity)(This, Possible);
+    This->Possible = Possible;
   }
 
   static

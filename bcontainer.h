@@ -18,14 +18,18 @@
   #error will be implemented later
 #endif
 
+#ifdef bcontainer_set_PossibleUpdate
+  #error PossibleUpdate now called CapacityUpdate
+#endif
+
 /* --- deprecated --- */
 
 #ifndef bcontainer_set_Prefix
   #error ifndef bcontainer_set_Prefix
 #endif
 
-#ifndef bcontainer_set_PossibleUpdate
-  #define bcontainer_set_PossibleUpdate
+#ifndef bcontainer_set_CapacityUpdate
+  #define bcontainer_set_CapacityUpdate
 #endif
 
 #ifndef bcontainer_set_PointerNodeType
@@ -152,5 +156,5 @@
 #undef bcontainer_set_NodeSizeType
 #undef bcontainer_set_NodeType
 #undef bcontainer_set_PointerNodeType
-#undef bcontainer_set_PossibleUpdate
+#undef bcontainer_set_CapacityUpdate
 #undef bcontainer_set_Prefix
