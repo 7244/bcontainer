@@ -217,12 +217,14 @@ bcontainer_set_NodeType
 _bcontainer_P(WhatFirstWouldBe)(
   _bcontainer_P(t) *This
 ){
+  bcontainer_set_NodeType r;
+
   #if bcontainer_set_StoreFormat == 0
     #if bcontainer_set_PreserveSome
       #error no
     #endif
 
-    return 0;
+    r = 0;
   #elif bcontainer_set_StoreFormat == 1
     #if bcontainer_set_StoreFormat1_StoreNodeList
       #if bcontainer_set_RuntimePreallocate
@@ -232,13 +234,21 @@ _bcontainer_P(WhatFirstWouldBe)(
         #error not implemented
       #endif
 
-      return 0;
+      r = 0;
     #else
-      return (bcontainer_set_NodeType)1 << _bcontainer_P(_WhatFirstNodeListWouldBe)(This);
+      r = (bcontainer_set_NodeType)1 << _bcontainer_P(_WhatFirstNodeListWouldBe)(This);
     #endif
   #else
     #error ?
   #endif
+
+  #if bcontainer_set_UseZeroAsInvalid
+    if(r < 1){
+      r = 1;
+    }
+  #endif
+
+  return r;
 }
 
 static

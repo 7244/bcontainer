@@ -59,6 +59,10 @@
   #define bcontainer_set_Recycle 0
 #endif
 
+#ifndef bcontainer_set_UseZeroAsInvalid
+  #define bcontainer_set_UseZeroAsInvalid 0
+#endif
+
 #ifndef bcontainer_set_MultiThread
   #define bcontainer_set_MultiThread 0
 #endif
@@ -151,6 +155,7 @@
 #endif
 #undef bcontainer_set_CountLockFail
 #undef bcontainer_set_MultiThread
+#undef bcontainer_set_UseZeroAsInvalid
 #undef bcontainer_set_Recycle
 #undef bcontainer_set_Clear
 #undef bcontainer_set_NodeSizeType
