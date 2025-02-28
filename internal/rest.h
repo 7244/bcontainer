@@ -414,7 +414,7 @@ _bcontainer_P(_InformCapacity)(
     #error ?
   #endif
 
-  bcontainer_set_CapacityUpdate
+  bcontainer_set_CapacityUpdateInfo
 }
 
 #if bcontainer_set_StoreFormat == 0

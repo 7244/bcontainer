@@ -22,14 +22,18 @@
   #error PossibleUpdate now called CapacityUpdate
 #endif
 
+#ifdef bcontainer_set_CapacityUpdate
+  #error CapacityUpdate now called CapacityUpdateInfo
+#endif
+
 /* --- deprecated --- */
 
 #ifndef bcontainer_set_Prefix
   #error ifndef bcontainer_set_Prefix
 #endif
 
-#ifndef bcontainer_set_CapacityUpdate
-  #define bcontainer_set_CapacityUpdate
+#ifndef bcontainer_set_CapacityUpdateInfo
+  #define bcontainer_set_CapacityUpdateInfo
 #endif
 
 #ifndef bcontainer_set_PointerNodeType
@@ -161,5 +165,5 @@
 #undef bcontainer_set_NodeSizeType
 #undef bcontainer_set_NodeType
 #undef bcontainer_set_PointerNodeType
-#undef bcontainer_set_CapacityUpdate
+#undef bcontainer_set_CapacityUpdateInfo
 #undef bcontainer_set_Prefix
