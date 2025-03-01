@@ -100,6 +100,29 @@ _bcontainer_P(GetNodeSize)
   #endif
 }
 
+static
+__forceinline
+uint8_t
+_bcontainer_P(_clz_nodeid)(
+  bcontainer_set_NodeType node_id
+){
+  if(sizeof(bcontainer_set_NodeType) * 8 == 8){
+    return __builtin_clz(node_id) - 24;
+  }
+  else if(sizeof(bcontainer_set_NodeType) * 8 == 16){
+    return __builtin_clz(node_id) - 16;
+  }
+  else if(sizeof(bcontainer_set_NodeType) * 8 == 32){
+    return __builtin_clz(node_id);
+  }
+  else if(sizeof(bcontainer_set_NodeType) * 8 == 64){
+    return __builtin_clzll(node_id);
+  }
+  else{
+    __abort();
+  }
+}
+
 #if bcontainer_set_StoreFormat == 1
   static
   __forceinline
@@ -401,7 +424,11 @@ _bcontainer_P(_InformCapacity)(
   #endif
 ){
   #if bcontainer_set_StoreFormat == 0
-    bcontainer_set_NodeType old_capacity = _Possible / 2;
+    bcontainer_set_NodeType old_capacity =
+      _Possible == (bcontainer_set_NodeType)-1 ?
+      (bcontainer_set_NodeType)1 << sizeof(bcontainer_set_NodeType) * 8 - 1 :
+      _Possible / 2
+    ;
     bcontainer_set_NodeType new_capacity = _Possible;
   #elif bcontainer_set_StoreFormat == 1
     bcontainer_set_NodeType old_capacity =
@@ -416,98 +443,6 @@ _bcontainer_P(_InformCapacity)(
 
   bcontainer_set_CapacityUpdateInfo
 }
-
-#if bcontainer_set_StoreFormat == 0
-  static
-  void
-  _bcontainer_P(_SetPossible)(
-    _bcontainer_P(t) *This,
-    bcontainer_set_NodeType Possible
-  ){
-    _bcontainer_P(_InformCapacity)(This, Possible);
-    This->Possible = Possible;
-  }
-
-  static
-  void
-  _bcontainer_P(SetPossibleWith)(
-    _bcontainer_P(t) *This,
-    bcontainer_set_NodeType Size
-  ){
-    _bcontainer_P(_SetPossible)(This, ((uintptr_t)2 << sizeof(uintptr_t) * 8 - __clz(Size | 1)) - 1);
-  }
-
-  static
-  void
-  _bcontainer_P(Reserve)
-  (
-    _bcontainer_P(t) *This,
-    bcontainer_set_NodeType Amount
-  ){
-    bcontainer_set_NodeType old_possible = This->Possible;
-
-    _bcontainer_P(_SetPossible)(This, Amount);
-
-    This->ptr = (_bcontainer_P(Node_t) *)_bcontainer_P(_mrealloc)(
-      This->ptr,
-      (uintptr_t)old_possible * _bcontainer_P(GetNodeSize)(This),
-      (uintptr_t)This->Possible * _bcontainer_P(GetNodeSize)(This)
-    );
-  }
-
-  static
-  void
-  _bcontainer_P(_AllocateBufferWith)
-  (
-    _bcontainer_P(t) *This,
-    bcontainer_set_NodeType Amount
-  ){
-    bcontainer_set_NodeType old_possible = This->Possible;
-
-    _bcontainer_P(SetPossibleWith)(This, Amount);
-
-    This->ptr = (_bcontainer_P(Node_t) *)_bcontainer_P(_mrealloc)(
-      This->ptr,
-      (uintptr_t)old_possible * _bcontainer_P(GetNodeSize)(This),
-      (uintptr_t)This->Possible * _bcontainer_P(GetNodeSize)(This)
-    );
-  }
-#endif
-
-#if bcontainer_set_StoreFormat == 0
-  static
-  void
-  _bcontainer_P(AddEmpty)
-  (
-    _bcontainer_P(t) *This,
-    bcontainer_set_NodeType Amount
-  ){
-    bcontainer_set_NodeType Current = This->Current + Amount;
-    if(Current >= This->Possible){
-      _bcontainer_P(_AllocateBufferWith)(This, Current);
-    }
-    This->Current = Current;
-  }
-
-  static
-  void
-  _bcontainer_P(Add)
-  (
-    _bcontainer_P(t) *This,
-    _bcontainer_P(Node_t) *Node
-  ){
-    if(This->Current == This->Possible){
-      _bcontainer_P(_AllocateBufferWith)(This, This->Current);
-    }
-
-    #ifdef bcontainer_set_NodeData
-      This->ptr[This->Current] = *Node;
-    #else
-      __MemoryCopy(Node, _bcontainer_P(GetNode)(This, This->Current), This->NodeSize);
-    #endif
-    ++This->Current;
-  }
-#endif
 
 #if bcontainer_set_Recycle
   static
