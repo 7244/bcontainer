@@ -6,6 +6,7 @@
   bcontainer_set_NodeType node_id = This->Current++;
   uint8_t NodeList = _bcontainer_P(_GetNodeListByNodeID)(node_id);
   if(This->NodeLists[NodeList] == NULL){
+    _bcontainer_P(_InformCapacity)(This, NodeList);
     This->NodeLists[NodeList] = _bcontainer_P(_StoreFormat1_AllocateNodeList)(This, NodeList);
   }
 #else
@@ -25,6 +26,7 @@
         bcontainer_set_NodeType c = node_id;
         while(c + 0xc00 * !bcontainer_set_PreserveSome >= This->Possible){
           uint8_t NodeList = _bcontainer_P(_GetNodeListByNodeID)(This->Possible << !!bcontainer_set_PreserveSome);
+          _bcontainer_P(_InformCapacity)(This, NodeList);
           __atomic_exchange_n(
             &This->NodeLists[NodeList],
             _bcontainer_P(_StoreFormat1_AllocateNodeList)(This, NodeList),
@@ -47,6 +49,7 @@
     if(__atomic_load_n(&This->NodeLists[NodeList], __ATOMIC_RELAXED) == NULL){
       while(_bcontainer_P(_FastLock_Lock)(&This->NodeListsLocks[NodeList])){ /* TOOD cpu relax */ }
       if(__atomic_load_n(&This->NodeLists[NodeList], __ATOMIC_SEQ_CST) == NULL){
+        _bcontainer_P(_InformCapacity)(This, NodeList);
         __atomic_exchange_n(
           &This->NodeLists[NodeList],
           _bcontainer_P(_StoreFormat1_AllocateNodeList)(This, NodeList),
