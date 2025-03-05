@@ -336,6 +336,44 @@ _bcontainer_P(Usage)(
   ;
 }
 
+/* TODO port this to other store formats */
+#if bcontainer_set_StoreFormat == 0
+  static
+  bcontainer_set_NodeType
+  _bcontainer_P(SizeNormalized)(
+    _bcontainer_P(t) *This
+  ){
+    return This->Current - _bcontainer_P(WhatFirstWouldBe)(This);
+  }
+
+  static
+  bcontainer_set_NodeType
+  _bcontainer_P(Normalize)(
+    _bcontainer_P(t) *This,
+    #if bcontainer_set_PointerNodeType
+      _bcontainer_P(Node_t) *node_id
+    #else
+      bcontainer_set_NodeType node_id
+    #endif
+  ){
+    return node_id - _bcontainer_P(WhatFirstWouldBe)(This);
+  }
+
+  static
+  #if bcontainer_set_PointerNodeType
+    _bcontainer_P(Node_t) *
+  #else
+    bcontainer_set_NodeType
+  #endif
+  _bcontainer_P(Unnormalize)(
+    _bcontainer_P(t) *This,
+    bcontainer_set_NodeType node_id
+  ){
+    return node_id + _bcontainer_P(WhatFirstWouldBe)(This);
+  }
+#endif
+
+
 #if bcontainer_set_StoreFormat == 0
   static
   _bcontainer_P(Node_t) *
