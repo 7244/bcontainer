@@ -336,6 +336,17 @@ _bcontainer_P(Usage)(
   ;
 }
 
+#if bcontainer_set_StoreFormat == 0
+  static
+  _bcontainer_P(Node_t) *
+  _bcontainer_P(GetSinglePointer)
+  (
+    _bcontainer_P(t) *This
+  ){
+    return This->ptr;
+  }
+#endif
+
 static
 void
 _bcontainer_P(Close)

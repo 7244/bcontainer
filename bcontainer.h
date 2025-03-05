@@ -14,10 +14,6 @@
   #error this will be implemented later
 #endif
 
-#ifdef bcontainer_set_HandleAllocate
-  #error will be implemented later
-#endif
-
 #ifdef bcontainer_set_PossibleUpdate
   #error PossibleUpdate now called CapacityUpdate
 #endif
@@ -160,6 +156,9 @@
 #undef bcontainer_set_CountLockFail
 #undef bcontainer_set_MultiThread
 #undef bcontainer_set_UseZeroAsInvalid
+#ifdef bcontainer_set_HandleAllocate
+  #undef bcontainer_set_HandleAllocate
+#endif
 #undef bcontainer_set_Recycle
 #undef bcontainer_set_Clear
 #undef bcontainer_set_NodeSizeType

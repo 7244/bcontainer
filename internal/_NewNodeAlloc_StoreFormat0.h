@@ -26,11 +26,18 @@ if(This->Current == This->Possible){
     This->Possible
   );
 
-  This->ptr = (_bcontainer_P(Node_t) *)_bcontainer_P(_mrealloc)(
-    This->ptr,
-    (uintptr_t)old_possible * _bcontainer_P(GetNodeSize)(This),
-    (uintptr_t)This->Possible * _bcontainer_P(GetNodeSize)(This)
-  );
+  #if !defined(bcontainer_set_HandleAllocate)
+    This->ptr = (_bcontainer_P(Node_t) *)_bcontainer_P(_mrealloc)(
+      This->ptr,
+      (uintptr_t)old_possible * _bcontainer_P(GetNodeSize)(This),
+      (uintptr_t)This->Possible * _bcontainer_P(GetNodeSize)(This)
+    );
+  #else
+    This->ptr = (_bcontainer_P(Node_t) *)bcontainer_set_HandleAllocate(
+      This,
+      old_possible
+    );
+  #endif
 }
 
 return This->Current++;
