@@ -496,6 +496,15 @@ _bcontainer_P(_InformCapacity)(
 #if bcontainer_set_Recycle
   static
   bcontainer_set_NodeType
+  _bcontainer_P(_GetNextRecycledFromID)(
+    _bcontainer_P(t) *This,
+    bcontainer_set_NodeType node_id
+  ){
+    return *(bcontainer_set_NodeType *)_bcontainer_P(GetNode)(This, node_id);
+  }
+
+  static
+  bcontainer_set_NodeType
   _bcontainer_P(_NewNodeEmpty)(
     _bcontainer_P(t) *This
   ){
@@ -503,13 +512,7 @@ _bcontainer_P(_InformCapacity)(
       #error not implemented
     #endif
     bcontainer_set_NodeType node_id = This->e.c;
-    This->e.c = *(bcontainer_set_NodeType *)_bcontainer_P(GetNode)(This,
-      #if bcontainer_set_PointerNodeType
-        (_bcontainer_P(Node_t ) *)node_id
-      #else
-        node_id
-      #endif
-    );
+    This->e.c = _bcontainer_P(_GetNextRecycledFromID)(This, node_id);
     This->e.p--;
     return node_id;
   }
