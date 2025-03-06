@@ -107,16 +107,16 @@ _bcontainer_P(_clz_nodeid)(
   bcontainer_set_NodeType node_id
 ){
   if(sizeof(bcontainer_set_NodeType) * 8 == 8){
-    return __builtin_clz(node_id) - 24;
+    return __clz32(node_id) - 24;
   }
   else if(sizeof(bcontainer_set_NodeType) * 8 == 16){
-    return __builtin_clz(node_id) - 16;
+    return __clz32(node_id) - 16;
   }
   else if(sizeof(bcontainer_set_NodeType) * 8 == 32){
-    return __builtin_clz(node_id);
+    return __clz32(node_id);
   }
   else if(sizeof(bcontainer_set_NodeType) * 8 == 64){
-    return __builtin_clzll(node_id);
+    return __clz64(node_id);
   }
   else{
     __abort();
