@@ -336,42 +336,131 @@ _bcontainer_P(Usage)(
   ;
 }
 
-/* TODO port this to other store formats */
-#if bcontainer_set_StoreFormat == 0
-  static
-  bcontainer_set_NodeType
-  _bcontainer_P(SizeNormalized)(
-    _bcontainer_P(t) *This
-  ){
-    return This->Current - _bcontainer_P(WhatFirstWouldBe)(This);
-  }
-
-  static
-  bcontainer_set_NodeType
-  _bcontainer_P(Normalize)(
-    _bcontainer_P(t) *This,
-    #if bcontainer_set_PointerNodeType
-      _bcontainer_P(Node_t) *node_id
-    #else
-      bcontainer_set_NodeType node_id
+static
+bcontainer_set_NodeType
+_bcontainer_P(SizeNormalized)(
+  _bcontainer_P(t) *This
+){
+  #if bcontainer_set_StoreFormat == 0
+    #if bcontainer_set_MultiThread
+      #error not implemented
     #endif
-  ){
-    return node_id - _bcontainer_P(WhatFirstWouldBe)(This);
-  }
 
-  static
-  #if bcontainer_set_PointerNodeType
-    _bcontainer_P(Node_t) *
+    return This->Current - _bcontainer_P(WhatFirstWouldBe)(This);
+  #elif bcontainer_set_StoreFormat == 1
+    #if bcontainer_set_StoreFormat1_StoreNodeList
+      #if bcontainer_set_MultiThread
+        #error not implemented
+      #endif
+
+      bcontainer_set_NodeType ret =
+        ((bcontainer_set_NodeType)1 << This->NodeList) -
+        ((bcontainer_set_NodeType)1 << _bcontainer_P(_WhatFirstNodeListWouldBe)(This));
+
+      ret -= (bcontainer_set_NodeType)(
+        (
+          (uintptr_t)This->Current -
+          (uintptr_t)This->Possible
+        ) / _bcontainer_P(GetNodeSize)(This)
+      );
+
+      return ret;
+    #else
+      #if bcontainer_set_MultiThread
+        return
+          __atomic_load_n(&This->Current, __ATOMIC_SEQ_CST) -
+          _bcontainer_P(WhatFirstWouldBe)(This)
+        ;
+      #else
+        return This->Current - _bcontainer_P(WhatFirstWouldBe)(This);
+      #endif
+    #endif
   #else
-    bcontainer_set_NodeType
+    #error ?
   #endif
-  _bcontainer_P(Unnormalize)(
-    _bcontainer_P(t) *This,
+}
+
+static
+bcontainer_set_NodeType
+_bcontainer_P(Normalize)(
+  _bcontainer_P(t) *This,
+  #if bcontainer_set_PointerNodeType
+    _bcontainer_P(Node_t) *node_id
+  #else
     bcontainer_set_NodeType node_id
-  ){
-    return node_id + _bcontainer_P(WhatFirstWouldBe)(This);
-  }
+  #endif
+){
+  #if bcontainer_set_StoreFormat == 0
+    return node_id - _bcontainer_P(WhatFirstWouldBe)(This);
+  #elif bcontainer_set_StoreFormat == 1
+    #if bcontainer_set_StoreFormat1_StoreNodeList
+      #if bcontainer_set_MultiThread
+        #error not implemented
+      #endif
+
+      bcontainer_set_NodeSizeType ns = _bcontainer_P(GetNodeSize)(This);
+      uint8_t List = _bcontainer_P(_WhatFirstNodeListWouldBe)(This);
+      while(1){
+        uintptr_t s = ((uintptr_t)1 << List) * ns;
+        if(
+          (uintptr_t)node_id >= (uintptr_t)This->NodeLists[List] && 
+          (uintptr_t)node_id < (uintptr_t)This->NodeLists[List] + s
+        ){
+          break;
+        }
+
+        List++;
+      }
+
+      bcontainer_set_NodeType ret =
+        ((bcontainer_set_NodeType)1 << List) -
+        ((bcontainer_set_NodeType)1 << _bcontainer_P(_WhatFirstNodeListWouldBe)(This));
+
+      ret -= (
+        (uintptr_t)node_id -
+        (uintptr_t)This->NodeLists[List]
+      ) / ns;
+    #else
+      return node_id - _bcontainer_P(WhatFirstWouldBe)(This);
+    #endif
+  #else
+    #error ?
+  #endif
+}
+
+static
+#if bcontainer_set_PointerNodeType
+  _bcontainer_P(Node_t) *
+#else
+  bcontainer_set_NodeType
 #endif
+_bcontainer_P(Unnormalize)(
+  _bcontainer_P(t) *This,
+  bcontainer_set_NodeType node_id
+){
+  #if bcontainer_set_StoreFormat == 0
+    return node_id + _bcontainer_P(WhatFirstWouldBe)(This);
+  #elif bcontainer_set_StoreFormat == 1
+    #if bcontainer_set_StoreFormat1_StoreNodeList
+      #if bcontainer_set_MultiThread
+        #error not implemented
+      #endif
+
+      node_id += _bcontainer_P(WhatFirstWouldBe)(This);
+      uint8_t List = _bcontainer_P(_GetNodeListByNodeID)(node_id);
+      node_id -= (bcontainer_set_NodeType)1 << List;
+      bcontainer_set_NodeSizeType ns = _bcontainer_P(GetNodeSize)(This);
+      uintptr_t ListByteSize = ((uintptr_t)1 << List) * ns;
+      return (_bcontainer_P(Node_t) *)(
+        (uintptr_t)This->NodeLists[List] +
+        ListByteSize -
+        ((uintptr_t)node_id - 1) * ns
+      );
+    #else
+      return node_id + _bcontainer_P(WhatFirstWouldBe)(This);
+    #endif
+  #endif
+}
 
 
 #if bcontainer_set_StoreFormat == 0
