@@ -38,6 +38,16 @@ static void *_bcontainer_P(_mremap)(
   }
   __abort();
 }
+static void *_bcontainer_P(_mmalloc)(
+  uintptr_t size
+){
+  if(size){
+    return _bcontainer_P(_mmap)(size);
+  }
+  else{
+    return NULL;
+  }
+}
 static void *_bcontainer_P(_mrealloc)(
   void *ptr,
   uintptr_t old_size,
