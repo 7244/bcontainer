@@ -337,6 +337,63 @@ _bcontainer_P(Usage)(
 }
 
 static
+bool
+_bcontainer_P(IsElementInvalid)(
+  _bcontainer_P(t) *This,
+  bcontainer_set_NodeType element_id
+){
+  #if bcontainer_set_StoreFormat == 0
+    #if bcontainer_set_MultiThread
+      #error not implemented
+    #endif
+
+    if(element_id < _bcontainer_P(WhatFirstWouldBe)(This)){
+      return 1;
+    }
+    if(element_id >= This->Current){
+      return 1;
+    }
+    return 0;
+  #elif bcontainer_set_StoreFormat == 1
+    #if bcontainer_set_StoreFormat1_StoreNodeList
+      #if bcontainer_set_MultiThread
+        #error not implemented
+      #endif
+
+      bcontainer_set_NodeSizeType ns = _bcontainer_P(GetNodeSize)(This);
+      uint8_t List = _bcontainer_P(_WhatFirstNodeListWouldBe)(This);
+      for(; List < sizeof(This->NodeLists) / sizeof(This->NodeLists[0]); List++){
+        uintptr_t s = ((uintptr_t)1 << List) * ns;
+        if(
+          (uintptr_t)node_id >= (uintptr_t)This->NodeLists[List] && 
+          (uintptr_t)node_id < (uintptr_t)This->NodeLists[List] + s
+        ){
+          break;
+        }
+
+        List++;
+      }
+
+      return List == sizeof(This->NodeLists) / sizeof(This->NodeLists[0]);
+    #else
+      if(element_id < _bcontainer_P(WhatFirstWouldBe)(This)){
+        return 1;
+      }
+      #if bcontainer_set_MultiThread
+        if(element_id >= __atomic_load_n(&This->Current, __ATOMIC_SEQ_CST)){
+      #else
+        if(element_id >= This->Current){
+      #endif
+        return 1;
+      }
+      return 0;
+    #endif
+  #else
+    #error ?
+  #endif
+}
+
+static
 bcontainer_set_NodeType
 _bcontainer_P(SizeNormalized)(
   _bcontainer_P(t) *This
