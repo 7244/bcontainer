@@ -59,6 +59,11 @@
   #define bcontainer_set_Recycle 0
 #endif
 
+#ifndef bcontainer_set_IsElementRecycled
+  #define bcontainer_set_IsElementRecycled 0
+#endif
+#define bcontainer_set_IsElementRecycled_Strategy_InvalidateDataAsID 2
+
 #ifndef bcontainer_set_UseZeroAsInvalid
   #define bcontainer_set_UseZeroAsInvalid 0
 #endif
@@ -159,6 +164,8 @@
 #ifdef bcontainer_set_HandleAllocate
   #undef bcontainer_set_HandleAllocate
 #endif
+#undef bcontainer_set_IsElementRecycled_Strategy_InvalidateDataAsID
+#undef bcontainer_set_IsElementRecycled
 #undef bcontainer_set_Recycle
 #undef bcontainer_set_Clear
 #undef bcontainer_set_NodeSizeType

@@ -71,6 +71,19 @@ typedef struct{
 
 static
 __forceinline
+bcontainer_set_NodeType
+_bcontainer_P(GetInvalidConstant)(
+  _bcontainer_P(t) *This
+){
+  #if bcontainer_set_UseZeroAsInvalid
+    return 0;
+  #else
+    return (bcontainer_set_NodeType)-1;
+  #endif
+}
+
+static
+__forceinline
 bcontainer_set_NodeSizeType
 _bcontainer_P(_PadGivenNodeSize)
 (
@@ -78,9 +91,17 @@ _bcontainer_P(_PadGivenNodeSize)
   bcontainer_set_NodeSizeType Size
 ){
   #if bcontainer_set_Recycle
-    if(Size < sizeof(bcontainer_set_NodeSizeType)){
-      Size = sizeof(bcontainer_set_NodeSizeType);
-    }
+    #if bcontainer_set_IsElementRecycled == \
+      bcontainer_set_IsElementRecycled_Strategy_InvalidateDataAsID
+
+      if(Size < sizeof(bcontainer_set_NodeSizeType) * 2){
+        Size = sizeof(bcontainer_set_NodeSizeType) * 2;
+      }
+    #else
+      if(Size < sizeof(bcontainer_set_NodeSizeType)){
+        Size = sizeof(bcontainer_set_NodeSizeType);
+      }
+    #endif
   #endif
 
   return Size;
@@ -649,6 +670,66 @@ _bcontainer_P(_InformCapacity)(
     return *(bcontainer_set_NodeType *)_bcontainer_P(GetNode)(This, node_id);
   }
 
+  #if bcontainer_set_IsElementRecycled
+    static
+    bool
+    _bcontainer_P(IsElementRecycled)(
+      _bcontainer_P(t) *This,
+      bcontainer_set_NodeType element_id
+    ){
+      #if bcontainer_set_IsElementRecycled == \
+        bcontainer_set_IsElementRecycled_Strategy_InvalidateDataAsID
+
+        return ((bcontainer_set_NodeType *)_bcontainer_P(GetNode)(
+          This,
+          element_id
+        ))[1] == _bcontainer_P(GetInvalidConstant)(This);
+      #else
+        #error ?
+      #endif
+    }
+  #endif
+
+  static
+  void
+  _bcontainer_P(_MarkAsRecycled)(
+    _bcontainer_P(t) *This,
+    bcontainer_set_NodeType element_id
+  ){
+    #if bcontainer_set_IsElementRecycled == 0
+      /* ~lamington~ */
+    #elif bcontainer_set_IsElementRecycled == \
+      bcontainer_set_IsElementRecycled_Strategy_InvalidateDataAsID
+
+      ((bcontainer_set_NodeType *)_bcontainer_P(GetNode)(
+        This,
+        element_id
+      ))[1] = _bcontainer_P(GetInvalidConstant)(This);
+    #else
+      #error ?
+    #endif
+  }
+
+  static
+  void
+  _bcontainer_P(_UnmarkAsRecycled)(
+    _bcontainer_P(t) *This,
+    bcontainer_set_NodeType element_id
+  ){
+    #if bcontainer_set_IsElementRecycled == 0
+      /* ~unlamington~ */
+    #elif bcontainer_set_IsElementRecycled == \
+      bcontainer_set_IsElementRecycled_Strategy_InvalidateDataAsID
+
+      ((bcontainer_set_NodeType *)_bcontainer_P(GetNode)(
+        This,
+        element_id
+      ))[1] = ~_bcontainer_P(GetInvalidConstant)(This);
+    #else
+      #error ?
+    #endif
+  }
+
   static
   bcontainer_set_NodeType
   _bcontainer_P(_NewNodeEmpty)(
@@ -660,6 +741,7 @@ _bcontainer_P(_InformCapacity)(
     bcontainer_set_NodeType node_id = This->e.c;
     This->e.c = _bcontainer_P(_GetNextRecycledFromID)(This, node_id);
     This->e.p--;
+    _bcontainer_P(_UnmarkAsRecycled)(This, node_id);
     return node_id;
   }
 #endif
@@ -714,6 +796,7 @@ _bcontainer_P(NewNode)(
     #endif
 
     *(bcontainer_set_NodeType *)_bcontainer_P(GetNode)(This, node_id) = This->e.c;
+    _bcontainer_P(_MarkAsRecycled)(This, node_id);
     This->e.c = (bcontainer_set_NodeType)node_id;
     This->e.p++;
   }
