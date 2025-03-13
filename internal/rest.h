@@ -21,9 +21,9 @@ typedef struct{
   #if bcontainer_set_StoreFormat == 0
     bcontainer_set_NodeType Current;
     bcontainer_set_NodeType Possible;
-    _bcontainer_P(Node_t) *ptr;
+    void *ptr;
   #elif bcontainer_set_StoreFormat == 1
-    _bcontainer_P(Node_t) *NodeLists[
+    void *NodeLists[
       (uintptr_t)1 << __compile_time_log2(sizeof(bcontainer_set_NodeType) * 8)
     ];
     bcontainer_set_NodeType Current;
@@ -207,7 +207,9 @@ _bcontainer_P(GetNode)
     #else
       uint8_t NodeList = _bcontainer_P(_GetNodeListByNodeID)(node_id);
       node_id -= (bcontainer_set_NodeType)1 << NodeList;
-      return &This->NodeLists[NodeList][node_id];
+      return (_bcontainer_P(Node_t) *)(
+        (uint8_t *)This->NodeLists[NodeList] + node_id * _bcontainer_P(GetNodeSize)(This)
+      );
     #endif
   #else
     #error ?
@@ -543,7 +545,7 @@ _bcontainer_P(Unnormalize)(
 
 #if bcontainer_set_StoreFormat == 0
   static
-  _bcontainer_P(Node_t) *
+  void *
   _bcontainer_P(GetSinglePointer)
   (
     _bcontainer_P(t) *This
