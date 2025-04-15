@@ -226,6 +226,12 @@ _bcontainer_P(_PageNodeDiv)(
 
   /* TODO store this in somewhere if below calculation is runtime */
 
+  /* for prevent bcontainer_set_NodeType overflow */
+  /* also not good to do this calculation if space is small */
+  if(sizeof(bcontainer_set_NodeType) * 8 <= 12){
+    return 0;
+  }
+
   return 0x1000 / _bcontainer_P(GetNodeSize)(This);
 }
 
@@ -245,7 +251,7 @@ _bcontainer_P(_PageNodeDiv)(
       ret = 1;
     }
 
-    ret = __compile_time_log2(ret);
+    ret = _bcontainer_P(_GetNodeListByNodeID)(ret);
 
     #if bcontainer_set_RuntimePreallocate
       if(ret < 1){
