@@ -347,7 +347,7 @@ _bcontainer_P(GetCapacity)(
 static
 bcontainer_set_NodeType
 _bcontainer_P(Usage)(
-  _bcontainer_P(t) *This
+  const _bcontainer_P(t) *This
 ){
   return
   #if bcontainer_set_StoreFormat == 0
