@@ -87,7 +87,7 @@ __forceinline
 bcontainer_set_NodeSizeType
 _bcontainer_P(_PadGivenNodeSize)
 (
-  _bcontainer_P(t) *This,
+  const _bcontainer_P(t) *This,
   bcontainer_set_NodeSizeType Size
 ){
   #if bcontainer_set_Recycle
@@ -112,7 +112,7 @@ __forceinline
 bcontainer_set_NodeSizeType
 _bcontainer_P(GetNodeSize)
 (
-  _bcontainer_P(t) *This
+  const _bcontainer_P(t) *This
 ){
   #if defined(bcontainer_set_NodeData)
     return _bcontainer_P(_PadGivenNodeSize)(This, sizeof(bcontainer_set_NodeData));
@@ -192,7 +192,7 @@ static
 _bcontainer_P(Node_t) *
 _bcontainer_P(GetNode)
 (
-  _bcontainer_P(t) *This,
+  const _bcontainer_P(t) *This,
   #if bcontainer_set_PointerNodeType
     _bcontainer_P(Node_t) *node_id
   #else
